@@ -2,8 +2,12 @@ import sys
 import cv2
 import numpy as np
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel
-from scipy import signal
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QComboBox
+from PyQt5.QtGui import QImage, QPixmap
+import requests
+import youtube_dl
+from pydub import AudioSegment
+from pydub.playback import play
 
 # Binaural Beat Generation Function
 def generate_binaural_beat(frequency_left, frequency_right, duration=5, sampling_rate=44100):
@@ -33,6 +37,10 @@ class MainWindow(QWidget):
         self.play_binaural_button.clicked.connect(self.play_binaural_beat)
         self.layout.addWidget(self.play_binaural_button)
 
+        self.search_binaural_button = QPushButton("Search & Play Online Binaural Beats", self)
+        self.search_binaural_button.clicked.connect(self.search_and_play_online_binaural_beat)
+        self.layout.addWidget(self.search_binaural_button)
+
         self.setLayout(self.layout)
 
         self.capture = cv2.VideoCapture(0)
@@ -59,6 +67,29 @@ class MainWindow(QWidget):
         self.status_label.setText("Binaural beat is playing for tinnitus treatment.")
         # Play the sound (this will require a library like pyaudio or sounddevice, not implemented here)
 
+    def search_and_play_online_binaural_beat(self):
+        # Search and play binaural beats music from YouTube or any other online source
+        self.status_label.setText("Searching and playing online binaural beats...")
+
+        # Example: Use youtube-dl to download binaural beat music from a URL or search
+        video_url = 'https://www.youtube.com/watch?v=VideoID'  # Replace with actual search or URL
+        self.play_binaural_from_youtube(video_url)
+
+    def play_binaural_from_youtube(self, video_url):
+        # Using youtube-dl to download the audio
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': 'downloaded_binaural_audio.%(ext)s',
+        }
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(video_url, download=True)
+            audio_file = ydl.prepare_filename(info_dict)
+
+        # Play the downloaded binaural beat
+        self.status_label.setText(f"Playing: {audio_file}")
+        audio = AudioSegment.from_file(audio_file)
+        play(audio)
+
     def suggest_cbt_ai_practices(self):
         # Example CBT practice suggestion
         self.status_label.setText("Recommendation: Try mindfulness, focus exercises, and AI-driven cognitive tools.")
@@ -74,9 +105,6 @@ class MainWindow(QWidget):
             bytes_per_line = channels * width
             q_image = QImage(frame_rgb.data, width, height, bytes_per_line, QImage.Format_RGB888)
             self.webcam_label.setPixmap(QPixmap(q_image))
-
-            # Eye detection or other computer vision tasks (e.g., facial landmark tracking, etc.)
-            # This would require adding face or eye detection functionality here
 
     def closeEvent(self, event):
         self.capture.release()
